@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Everglades Wading Birds</title>
+  <!-- Add Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Add Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #mapViewDiv {
+      width: 75%; /* Adjust width to leave space for the form panel */
+      height: calc(100% - 50px); /* Adjust height to account for the title bar */
+      position: absolute;
+      top: 50px; /* Push down to make space for the title bar */
+      left: 0;
+      z-index: 0; /* Ensure map is below UI elements */
+    }
+    .title-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background-color: #0079c1;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 1000; /* Ensure title bar is above all other elements */
+    }
+    .form-panel {
+      position: absolute;
+      top: 50px; /* Push down to align with the title bar */
+      right: 0;
+      height: calc(100% - 50px); /* Adjust height to account for the title bar */
+      width: 25%;
+      background-color: white;
+      overflow-y: auto;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      z-index: 1000; /* Ensure form panel is above the map */
+    }
+    .layer-toggles {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      max-width: 300px;
+      z-index: 1000; /* Ensure toggle container is above the map */
+    }
+    .custom-controls {
+      position: absolute;
+      top: 60px; /* Adjust to align with the title bar */
+      left: 10px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      pointer-events: auto; /* Ensure buttons are clickable */
+    }
+    .esri-widget--button {
+      display: inline-block;
+      margin: 0;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .zoom-button {
+      background-color: #0079c1;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .zoom-button:hover {
+      background-color: #005a8c;
+    }
+    .locate-me-button {
+      background-color: #0079c1;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .locate-me-button:hover {
+      background-color: #005a8c;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="title-bar">Everglades National Park | Wading Birds Sightings</div>
+  <div id="root"></div>
+  <div id="mapViewDiv"></div>
+  <!-- Include Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Include the React app -->
+  <script src="/src/index.js" type="module"></script>
+</body>
+</html>
