@@ -9,21 +9,26 @@
   <!-- Add Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
+    /* Scoped reset for the MapView container */
     #mapViewDiv {
-      width: 75%; /* Adjust width to leave space for the form panel */
-      height: calc(100% - 50px); /* Adjust height to account for the title bar */
-      position: absolute;
-      top: 50px; /* Push down to make space for the title bar */
-      left: 0;
-      z-index: 0; /* Ensure map is below UI elements */
+      position: relative; /* Ensure the map container is positioned relative to its parent */
+      width: 100%;
+      height: 100%;
+      pointer-events: auto; /* Ensure interactions are enabled */
     }
+
+    .esri-ui-top-left {
+      top: 10px; /* Add some spacing from the top */
+      left: 10px; /* Add some spacing from the left */
+    }
+
     .title-bar {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 50px;
-      background-color: #0079c1;
+      background-color: rgb(33, 58, 27);
       color: white;
       display: flex;
       align-items: center;
@@ -59,7 +64,7 @@
       position: absolute;
       top: 60px; /* Adjust to align with the title bar */
       left: 10px;
-      z-index: 1000;
+      z-index: 10;
       display: flex;
       flex-direction: column;
       gap: 5px;
@@ -96,9 +101,18 @@
     .locate-me-button:hover {
       background-color: #005a8c;
     }
+    .btn-primary {
+      background-color: rgb(33, 58, 27); /* Update button color */
+      border-color: rgb(33, 58, 27); /* Match border color */
+    }
+    .btn-primary:hover {
+      background-color: rgb(28, 50, 23); /* Slightly darker on hover */
+      border-color: rgb(28, 50, 23);
+    }
     body, html {
       margin: 0;
       padding: 0;
+      width: 100%;
       height: 100%;
     }
   </style>

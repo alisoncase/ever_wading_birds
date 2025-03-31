@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import MapView from '@arcgis/core/views/MapView.js';
 import WebMap from '@arcgis/core/WebMap.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer.js';
@@ -21,84 +21,102 @@ function App() {
     time: '',
   });
 
+  const mapDivRef = useRef(null);
+
   useEffect(() => {
+    console.log("Initializing WebMap and MapView...");
+
     // Initialize the map
     const webMap = new WebMap({
       basemap: 'gray-vector',
     });
 
     const view = new MapView({
-      container: 'mapViewDiv',
+      container: mapDivRef.current, // Use the ref here
       map: webMap,
       center: [-80.898651, 25.286615],
       zoom: 8,
       ui: {
-        components: ["attribution"], // Disable default zoom controls, keep attribution
+        components: ["zoom", "attribution"], // Enable default zoom and attribution controls
       },
     });
 
-    // Ensure panning and zooming work
-    view.navigation.mouseWheelZoomEnabled = true; // Enable zooming with the mouse wheel
-    view.navigation.browserTouchPanEnabled = true; // Enable touch-based panning
-    view.on("drag", (event) => {
-      event.stopPropagation(); // Allow dragging for panning
-    });
+    view.when(() => {
+      console.log("MapView successfully initialized.");
 
-    // Create a custom container for the controls
-    const customControls = document.createElement("div");
-    customControls.className = "custom-controls";
+      // Explicitly position the zoom buttons in the top-left corner
+      view.ui.move("zoom", "top-left");
+      console.log("Zoom buttons positioned in the top-left corner of the map container.");
 
-    // Add a "Locate Me" button
-    const locateButton = document.createElement("button");
-    locateButton.innerHTML = "Locate Me";
-    locateButton.className = "esri-widget esri-widget--button esri-interactive locate-me-button";
-    locateButton.title = "Zoom to your location";
+      // Attach event listeners
+      console.log("Attaching event listeners...");
+      view.on('click', (event) => {
+        console.log("Map click event triggered.");
+        if (event.mapPoint) {
+          const { latitude, longitude } = event.mapPoint;
+          console.log(`Clicked at latitude: ${latitude}, longitude: ${longitude}`);
+          setFormData((prevFormData) => ({
+            ...prevFormData,
+            lat: latitude.toFixed(6),
+            lon: longitude.toFixed(6),
+          }));
+        } else {
+          console.error("Map click event did not return a valid mapPoint.");
+        }
+      });
 
-    locateButton.addEventListener("click", () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            view.goTo({ center: [longitude, latitude], zoom: 12 });
-          },
-          (error) => {
-            console.error("Error getting location:", error);
-          }
-        );
-      } else {
-        console.error("Geolocation is not supported by this browser.");
+      view.on("mouse-wheel", (event) => {
+        console.log("Mouse wheel event triggered.");
+        // Allow default zoom behavior
+      });
+
+      view.on("drag", (event) => {
+        console.log("Drag event triggered.");
+        // Allow default pan behavior
+      });
+
+      // Debugging: Add logs for zoom button clicks
+      const zoomInButton = document.querySelector(".esri-ui-top-left .esri-widget--zoom-in");
+      const zoomOutButton = document.querySelector(".esri-ui-top-left .esri-widget--zoom-out");
+
+      if (zoomInButton) {
+        zoomInButton.addEventListener("click", () => {
+          console.log("Zoom In button clicked.");
+        });
       }
+
+      if (zoomOutButton) {
+        zoomOutButton.addEventListener("click", () => {
+          console.log("Zoom Out button clicked.");
+        });
+      }
+    }).catch((error) => {
+      console.error("Error initializing MapView:", error);
     });
 
-    // Add zoom in and zoom out buttons
-    const zoomInButton = document.createElement("button");
-    zoomInButton.innerHTML = "+";
-    zoomInButton.className = "esri-widget esri-widget--button esri-interactive zoom-button";
-    zoomInButton.title = "Zoom In";
+    // Debugging: Ensure the container is not blocked
+    const mapContainer = mapDivRef.current;
+    if (!mapContainer) {
+      console.error("MapView container not found.");
+      return;
+    } else {
+      console.log("MapView container found.");
+    }
 
-    zoomInButton.addEventListener("click", () => {
-      view.zoom += 1;
-    });
+    // Ensure no other elements are blocking the map
+    mapContainer.style.pointerEvents = "auto";
 
-    const zoomOutButton = document.createElement("button");
-    zoomOutButton.innerHTML = "−";
-    zoomOutButton.className = "esri-widget esri-widget--button esri-interactive zoom-button";
-    zoomOutButton.title = "Zoom Out";
+    // Debugging: Check if the map container has the correct dimensions
+    console.log(`Map container dimensions: width=${mapContainer.offsetWidth}, height=${mapContainer.offsetHeight}`);
 
-    zoomOutButton.addEventListener("click", () => {
-      view.zoom -= 1;
-    });
-
-    // Append buttons to the custom container
-    customControls.appendChild(zoomInButton);
-    customControls.appendChild(zoomOutButton);
-    customControls.appendChild(locateButton);
-
-    // Add the custom container to the top-left corner of the map
-    view.ui.add(customControls, "top-left");
-
-    // Ensure buttons are clickable by preventing pointer events from being blocked
-    customControls.style.pointerEvents = "auto";
+    // Debugging: Check if the MapView is properly attached to the container
+    console.log("Checking MapView DOM attachment...");
+    const mapViewElement = document.querySelector('#mapViewDiv');
+    if (mapViewElement) {
+      console.log("MapView DOM element found:", mapViewElement);
+    } else {
+      console.error("MapView DOM element not found.");
+    }
 
     // Fetch and add roads and trails layers from Supabase
     const fetchRoadsAndTrails = async () => {
@@ -205,16 +223,6 @@ function App() {
 
     fetchPOILayers();
 
-    // Add a click event listener to populate lat/lon in the form
-    view.on('click', (event) => {
-      const { latitude, longitude } = event.mapPoint;
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        lat: latitude.toFixed(6),
-        lon: longitude.toFixed(6),
-      }));
-    });
-
     // Fetch bird species from the "birds" table
     const fetchBirds = async () => {
       const { data, error } = await supabase.from('birds').select('*');
@@ -226,6 +234,14 @@ function App() {
     };
 
     fetchBirds();
+
+    // Cleanup function to destroy the map view when the component unmounts
+    return () => {
+      console.log("Destroying MapView...");
+      if (view) {
+        view.destroy();
+      }
+    };
   }, []);
 
   const toggleLayerVisibility = (poitype) => {
@@ -278,7 +294,7 @@ function App() {
             path="/"
             element={
               <div>
-                <div id="mapViewDiv"></div>
+                <div id="mapViewDiv" ref={mapDivRef} style={{ height: '100vh', width: '100%' }}></div>
                 <div className="form-panel">
                   <h3 className="text-center">Submit a Bird Sighting</h3>
                   <form onSubmit={handleFormSubmit}>
