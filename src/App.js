@@ -20,8 +20,10 @@ function App() {
     date: '',
     time: '',
   });
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const mapDivRef = useRef(null);
+  const viewRef = useRef(null);
 
   useEffect(() => {
     console.log("Initializing WebMap and MapView...");
@@ -32,7 +34,7 @@ function App() {
     });
 
     const view = new MapView({
-      container: mapDivRef.current,
+      container: mapDivRef.current, // Use the mapDivRef
       map: webMap,
       center: [-80.898651, 25.286615],
       zoom: 8,
@@ -45,8 +47,11 @@ function App() {
       },
     });
 
+    viewRef.current = view;
+
+    // Disable popups for basemap layers
     webMap.basemap.baseLayers.forEach((layer) => {
-      layer.popupEnabled = false; // Disable popups for basemap layers
+      layer.popupEnabled = false;
     });
 
     view.when(() => {
@@ -139,6 +144,9 @@ function App() {
             title: '{maplabel}',
             content: '{maplabel}',
           },
+          elevationInfo: {
+            mode: "on-the-ground", // Ensure roads and trails are rendered on the ground
+          },
         });
       };
 
@@ -159,10 +167,27 @@ function App() {
         return;
       }
 
+      const poitypeIcons = {
+        "Boat Launch": "/img/Boat_Launch.svg",
+        "Campground": "/img/Campground.svg",
+        "Campsite": "/img/Campsite.svg",
+        "Canoe / Kayak Access": "/img/Canoe_Kayak_Access.svg",
+        "Entrance Station": "/img/Entrance_Station.svg",
+        "Food Service": "/img/Food_Service.svg",
+        "Parking Lot": "/img/Parking_Lot.svg",
+        "Picnic Area": "/img/Picnic_Area.svg",
+        "Ranger Station": "/img/Ranger_Station.svg",
+        "Restroom": "/img/Restroom.svg",
+        "Trailhead": "/img/Trailhead.svg",
+        "Visitor Center": "/img/Visitor_Center.svg",
+      };
+
       const poiLayersData = {};
+      const poiLayers = []; // Keep track of POI layers for reordering
+
       data.forEach((poi) => {
         if (!poiLayersData[poi.poitype]) {
-          poiLayersData[poi.poitype] = new FeatureLayer({
+          const layer = new FeatureLayer({
             source: [],
             fields: [
               { name: 'objectid', alias: 'ObjectID', type: 'oid' },
@@ -175,10 +200,10 @@ function App() {
             renderer: {
               type: 'simple',
               symbol: {
-                type: 'simple-marker',
-                color: 'blue',
-                size: 8,
-                outline: { color: 'white', width: 1 },
+                type: 'picture-marker',
+                url: poitypeIcons[poi.poitype],
+                width: '24px',
+                height: '24px',
               },
             },
             title: poi.poitype,
@@ -192,7 +217,10 @@ function App() {
               `,
             },
           });
-          webMap.add(poiLayersData[poi.poitype]);
+
+          poiLayersData[poi.poitype] = layer;
+          poiLayers.push(layer);
+          webMap.add(layer);
         }
 
         const geom = JSON.parse(poi.geom_geojson);
@@ -207,6 +235,14 @@ function App() {
             poitype: poi.poitype,
             maplabel: poi.maplabel,
           },
+        });
+      });
+
+      view.when(() => {
+        const allLayers = view.map.layers;
+        poiLayers.forEach((layer) => {
+          allLayers.remove(layer);
+          allLayers.add(layer);
         });
       });
 
@@ -236,6 +272,27 @@ function App() {
     };
   }, []);
 
+  const reorderLayersToTop = (poiLayers) => {
+    const view = viewRef.current; // Access the view instance from the ref
+    if (view) {
+      view.when(() => {
+        const allLayers = view.map.layers;
+        console.log("Reordering POI layers to the top...");
+        poiLayers.forEach((layer) => {
+          if (allLayers.includes(layer)) {
+            allLayers.remove(layer); // Remove the layer
+            allLayers.add(layer); // Add it back to the top
+            console.log(`Layer "${layer.title}" moved to the top.`);
+          } else {
+            console.warn(`Layer "${layer.title}" not found in map layers.`);
+          }
+        });
+      });
+    } else {
+      console.error("View is not initialized.");
+    }
+  };
+
   const toggleLayerVisibility = (poitype) => {
     const layer = poiLayers[poitype];
     if (layer) {
@@ -259,10 +316,11 @@ function App() {
     event.preventDefault();
     const { species, lat, lon, date, time } = formData;
 
+    // Use "lat" and "lon" to match the Supabase table schema
     const newSighting = {
       species,
-      latitude: parseFloat(lat),
-      longitude: parseFloat(lon),
+      lat: parseFloat(lat), // Ensure lat is a number
+      lon: parseFloat(lon), // Ensure lon is a number
       date,
       time,
     };
@@ -272,10 +330,14 @@ function App() {
       console.error('Error submitting sighting:', error);
     } else {
       console.log('Sighting submitted successfully:', newSighting);
-      setSightings((prev) => [...prev, newSighting]);
-      setFormData({ species: '', lat: '', lon: '', date: '', time: '' });
-      setSelectedBird(null);
+      setFormSubmitted(true); // Show the thank-you message
     }
+  };
+
+  const resetForm = () => {
+    setFormData({ species: '', lat: '', lon: '', date: '', time: '' });
+    setSelectedBird(null);
+    setFormSubmitted(false); // Show the form again
   };
 
   return (
@@ -289,101 +351,110 @@ function App() {
                 <div id="mapViewDiv" ref={mapDivRef} style={{ height: '100vh', width: '100%' }}></div>
                 <div className="form-panel">
                   <h3 className="text-center">Submit a Bird Sighting</h3>
-                  <form onSubmit={handleFormSubmit}>
-                    <div className="mb-3">
-                      <label htmlFor="species" className="form-label">Select Bird Species:</label>
-                      <select
-                        id="species"
-                        name="species"
-                        className="form-select"
-                        value={formData.species}
-                        onChange={handleBirdChange}
-                        required
-                      >
-                        <option value="">-- Select a Species --</option>
-                        {birds.map((bird) => (
-                          <option key={bird.species} value={bird.species}>
-                            {bird.species}
-                          </option>
-                        ))}
-                      </select>
+                  {formSubmitted ? (
+                    <div className="thank-you-message text-center">
+                      <h4>Thank you for your submission!</h4>
+                      <button className="btn btn-primary mt-3" onClick={resetForm}>
+                        Submit Another Sighting
+                      </button>
                     </div>
-
-                    {selectedBird && (
-                      <div className="bird-details mb-3">
-                        <h4>{selectedBird.species}</h4>
-                        <img
-                          src={selectedBird.photo}
-                          alt={selectedBird.species}
-                          className="img-fluid mb-2"
-                        />
-                        <p>
-                          <strong>Photo Attribution:</strong>{' '}
-                          <span
-                            dangerouslySetInnerHTML={{ __html: selectedBird.photo_attr }}
-                          ></span>
-                        </p>
-                        <p>{selectedBird.info}</p>
-                        <a href={selectedBird.info_link} target="_blank" rel="noopener noreferrer">
-                          Learn More
-                        </a>
+                  ) : (
+                    <form onSubmit={handleFormSubmit}>
+                      <div className="mb-3">
+                        <label htmlFor="species" className="form-label">Select Bird Species:</label>
+                        <select
+                          id="species"
+                          name="species"
+                          className="form-select"
+                          value={formData.species}
+                          onChange={handleBirdChange}
+                          required
+                        >
+                          <option value="">-- Select a Species --</option>
+                          {birds.map((bird) => (
+                            <option key={bird.species} value={bird.species}>
+                              {bird.species}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    )}
 
-                    <div className="mb-3">
-                      <label htmlFor="lat" className="form-label">Latitude:</label>
-                      <input
-                        type="number"
-                        id="lat"
-                        name="lat"
-                        className="form-control"
-                        value={formData.lat}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
+                      {selectedBird && (
+                        <div className="bird-details mb-3">
+                          <h4>{selectedBird.species}</h4>
+                          <img
+                            src={selectedBird.photo}
+                            alt={selectedBird.species}
+                            className="img-fluid mb-2"
+                          />
+                          <p>
+                            <strong>Photo Attribution:</strong>{' '}
+                            <span
+                              dangerouslySetInnerHTML={{ __html: selectedBird.photo_attr }}
+                            ></span>
+                          </p>
+                          <p>{selectedBird.info}</p>
+                          <a href={selectedBird.info_link} target="_blank" rel="noopener noreferrer">
+                            Learn More
+                          </a>
+                        </div>
+                      )}
 
-                    <div className="mb-3">
-                      <label htmlFor="lon" className="form-label">Longitude:</label>
-                      <input
-                        type="number"
-                        id="lon"
-                        name="lon"
-                        className="form-control"
-                        value={formData.lon}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
+                      <div className="mb-3">
+                        <label htmlFor="lat" className="form-label">Latitude:</label>
+                        <input
+                          type="number"
+                          id="lat"
+                          name="lat"
+                          className="form-control"
+                          value={formData.lat}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="date" className="form-label">Date:</label>
-                      <input
-                        type="date"
-                        id="date"
-                        name="date"
-                        className="form-control"
-                        value={formData.date}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
+                      <div className="mb-3">
+                        <label htmlFor="lon" className="form-label">Longitude:</label>
+                        <input
+                          type="number"
+                          id="lon"
+                          name="lon"
+                          className="form-control"
+                          value={formData.lon}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="time" className="form-label">Time:</label>
-                      <input
-                        type="time"
-                        id="time"
-                        name="time"
-                        className="form-control"
-                        value={formData.time}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
+                      <div className="mb-3">
+                        <label htmlFor="date" className="form-label">Date:</label>
+                        <input
+                          type="date"
+                          id="date"
+                          name="date"
+                          className="form-control"
+                          value={formData.date}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
 
-                    <button type="submit" className="btn btn-primary w-100">Submit Sighting</button>
-                  </form>
+                      <div className="mb-3">
+                        <label htmlFor="time" className="form-label">Time:</label>
+                        <input
+                          type="time"
+                          id="time"
+                          name="time"
+                          className="form-control"
+                          value={formData.time}
+                          onChange={handleFormChange}
+                          required
+                        />
+                      </div>
+
+                      <button type="submit" className="btn btn-primary w-100">Submit Sighting</button>
+                    </form>
+                  )}
                 </div>
                 <div className="layer-toggles">
                   <h5>Points of Interest</h5>
