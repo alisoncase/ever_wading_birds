@@ -25,6 +25,8 @@ function App() {
   const [sightingsFeatures, setSightingsFeatures] = useState([]);
   const [selectedSpecies, setSelectedSpecies] = useState('');
   const [isSightingsLayerVisible, setIsSightingsLayerVisible] = useState(false);
+  const [isPOILayersMinimized, setIsPOILayersMinimized] = useState(false);
+  const [isSightingsLayersMinimized, setIsSightingsLayersMinimized] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -139,7 +141,8 @@ function App() {
             type: 'simple',
             symbol: {
               type: 'simple-line',
-              color: color,
+              //color: color,
+              color: `rgba(${color}, 0.5)`,
               width: 1,
             },
           },
@@ -156,8 +159,9 @@ function App() {
         });
       };
 
-      const roadsLayer = await fetchLayerData('roads', 'Roads', 'rgb(161, 118, 107)');
-      const trailsLayer = await fetchLayerData('trails', 'Trails', 'rgb(77, 80, 75)');
+      //const roadsLayer = await fetchLayerData('roads', 'Roads', '161, 118, 107'); // RGB for roads
+      const roadsLayer = await fetchLayerData('roads', 'Roads', '255, 255, 255'); // RGB for roads
+      const trailsLayer = await fetchLayerData('trails', 'Trails', '77, 80, 75'); // RGB for trails
 
       if (roadsLayer) webMap.add(roadsLayer);
       if (trailsLayer) webMap.add(trailsLayer);
@@ -306,13 +310,10 @@ function App() {
         renderer: {
           type: 'simple',
           symbol: {
-            type: 'simple-marker',
-            color: 'blue',
-            size: '8px',
-            outline: {
-              color: 'white',
-              width: 1,
-            },
+            type: 'picture-marker',
+            url: '/img/Bird.svg', // Path to the Bird.svg icon
+            width: '24px',
+            height: '24px',
           },
         },
         title: 'Sightings',
@@ -488,13 +489,10 @@ function App() {
       renderer: {
         type: 'simple',
         symbol: {
-          type: 'simple-marker',
-          color: 'blue',
-          size: '8px',
-          outline: {
-            color: 'white',
-            width: 1,
-          },
+          type: 'picture-marker',
+          url: '/img/Bird.svg', // Path to the Bird.svg icon
+          width: '24px',
+          height: '24px',
         },
       },
       title: 'Sightings',
@@ -561,7 +559,7 @@ function App() {
                           <img
                             src={selectedBird.photo}
                             alt={selectedBird.species}
-                            className="img-fluid mb-2"
+                            className="img-fluid bird-image mb-2" // Add the bird-image class here
                           />
                           <p>
                             <strong>Photo Attribution:</strong>{' '}
@@ -632,82 +630,133 @@ function App() {
                     </form>
                   )}
                 </div>
-                <div className="layer-toggles-container">
-                  <div className="layer-toggles">
-                    <h5>Points of Interest</h5>
-                    {Object.keys(poiLayers).map((poitype) => (
-                      <div key={poitype} className="form-check">
-                        <input
-                          type="checkbox"
-                          id={poitype}
-                          className="form-check-input"
-                          checked={poiLayers[poitype].visible}
-                          onChange={() => toggleLayerVisibility(poitype)}
-                        />
-                        <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                {/* Points of Interest Layer */}
+                  <div
+                    className={`layer-toggles-wrapper ${isPOILayersMinimized ? 'minimized' : ''}`}
+                    style={{
+                      position: 'absolute',
+                      bottom: '10px', // Position at the bottom
+                      left: '10px', // Align to the bottom-left corner
+                      zIndex: 1000, // Ensure it is above the map
+                    }}
+                  >
+                    <div className="layer-toggles">
+                      <div className="layer-header">
+                        <h5>Points of Interest</h5>
+                        <button
+                          className="btn btn-sm btn-outline-secondary minimize-button"
+                          onClick={() => {
+                            setIsPOILayersMinimized(!isPOILayersMinimized);
+                            console.log('isPOILayersMinimized:', !isPOILayersMinimized);
+                          }}
+                        >
+                          {isPOILayersMinimized ? '+' : '-'}
+                        </button>
                       </div>
-                    ))}
+                      {!isPOILayersMinimized && (
+                        <>
+                          {Object.keys(poiLayers).map((poitype) => (
+                            <div key={poitype} className="form-check">
+                              <input
+                                type="checkbox"
+                                id={poitype}
+                                className="form-check-input"
+                                checked={poiLayers[poitype].visible}
+                                onChange={() => toggleLayerVisibility(poitype)}
+                              />
+                              <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
                   </div>
-                
-                  <div className="layer-toggles">
-                    <h5>Sightings</h5>
-                    <div className="form-check">
-                      <input
-                        type="checkbox"
-                        id="sightingsLayerToggle"
-                        className="form-check-input"
-                        checked={isSightingsLayerVisible}
-                        onChange={() => toggleLayerVisibility('sightings')}
-                      />
-                      <label htmlFor="sightingsLayerToggle" className="form-check-label">
-                        View Sightings
-                      </label>
-                    </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="speciesFilter" className="form-label">Filter by Species:</label>
-                      <select
-                        id="speciesFilter"
-                        className="form-select"
-                        value={selectedSpecies}
-                        onChange={(e) => setSelectedSpecies(e.target.value)}
-                      >
-                        <option value="">-- All Species --</option>
-                        {birds.map((bird) => (
-                          <option key={bird.species} value={bird.species}>
-                            {bird.species}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  {/* Sightings Layer */}
+                  <div
+                    className={`layer-toggles-wrapper ${isSightingsLayersMinimized ? 'minimized' : ''}`}
+                    style={{
+                      position: 'absolute',
+                      bottom: '10px', // Position at the bottom
+                      left: '50%', // Center horizontally
+                      transform: 'translateX(-50%)', // Adjust to center the container
+                      zIndex: 1000, // Ensure it is above the map
+                    }}
+                  >
+                    <div className="layer-toggles">
+                      <div className="layer-header">
+                        <h5>Sightings</h5>
+                        <button
+                          className="btn btn-sm btn-outline-secondary minimize-button"
+                          onClick={() => {
+                            setIsSightingsLayersMinimized(!isSightingsLayersMinimized);
+                            console.log('isSightingsLayersMinimized:', !isSightingsLayersMinimized);
+                          }}
+                        >
+                          {isSightingsLayersMinimized ? '+' : '-'}
+                        </button>
+                      </div>
+                      {!isSightingsLayersMinimized && (
+                        <>
+                          <div className="form-check">
+                            <input
+                              type="checkbox"
+                              id="sightingsLayerToggle"
+                              className="form-check-input"
+                              checked={isSightingsLayerVisible}
+                              onChange={() => toggleLayerVisibility('sightings')}
+                            />
+                            <label htmlFor="sightingsLayerToggle" className="form-check-label">
+                              View Sightings
+                            </label>
+                          </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="startDate" className="form-label">Start Date:</label>
-                      <input
-                        type="date"
-                        id="startDate"
-                        className="form-control"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                    </div>
+                          <div className="mb-3">
+                            <label htmlFor="speciesFilter" className="form-label">Filter by Species:</label>
+                            <select
+                              id="speciesFilter"
+                              className="form-select"
+                              value={selectedSpecies}
+                              onChange={(e) => setSelectedSpecies(e.target.value)}
+                            >
+                              <option value="">-- All Species --</option>
+                              {birds.map((bird) => (
+                                <option key={bird.species} value={bird.species}>
+                                  {bird.species}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                    <div className="mb-3">
-                      <label htmlFor="endDate" className="form-label">End Date:</label>
-                      <input
-                        type="date"
-                        id="endDate"
-                        className="form-control"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
-                    </div>
+                          <div className="mb-3">
+                            <label htmlFor="startDate" className="form-label">Start Date:</label>
+                            <input
+                              type="date"
+                              id="startDate"
+                              className="form-control"
+                              value={startDate}
+                              onChange={(e) => setStartDate(e.target.value)}
+                            />
+                          </div>
 
-                    <button className="btn btn-primary w-100" onClick={applySightingsFilters}>
-                      Apply Filters
-                    </button>
+                          <div className="mb-3">
+                            <label htmlFor="endDate" className="form-label">End Date:</label>
+                            <input
+                              type="date"
+                              id="endDate"
+                              className="form-control"
+                              value={endDate}
+                              onChange={(e) => setEndDate(e.target.value)}
+                            />
+                          </div>
+
+                          <button className="btn btn-primary w-100" onClick={applySightingsFilters}>
+                            Apply Filters
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
               </div>
             }
           />

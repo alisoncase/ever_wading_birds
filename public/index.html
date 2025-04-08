@@ -111,6 +111,40 @@
       line-height: 1.5;
       color: #333; /* Set text color to dark gray */
     }
+    .bird-image {
+      max-width: 100%; /* Ensure the image doesn't exceed the container width */
+      max-height: 200px; /* Set a maximum height for the image */
+      object-fit: contain; /* Ensure the image scales proportionally */
+    }
+    .layer-toggles-wrapper {
+      transition: all 0.3s ease; /* Smooth transition for position and size changes */
+    }
+
+    .layer-toggles {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      max-width: 300px;
+      transition: height 0.3s ease, padding 0.3s ease; /* Smooth transition for height and padding */
+    }
+
+    .layer-toggles.minimized {
+      height: auto; /* Adjust height to fit the header only */
+      padding: 5px 15px; /* Reduce padding */
+    }
+
+    .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .minimize-button {
+      font-size: 14px;
+      padding: 2px 6px;
+      line-height: 1;
+    }
     .zoom-button {
       background-color: #0079c1;
       color: white;
