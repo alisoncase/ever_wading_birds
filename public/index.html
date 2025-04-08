@@ -52,16 +52,21 @@
       padding: 15px;
       z-index: 1000; /* Ensure form panel is above the map */
     }
+    .layer-toggles-container {
+    display: flex; /* Use flexbox to position children side-by-side */
+    gap: 15px; /* Add spacing between the divs */
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000; /* Ensure it is above the map */
+    }
+
     .layer-toggles {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
       background-color: rgba(255, 255, 255, 0.9);
       padding: 15px;
       border-radius: 5px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       max-width: 300px;
-      z-index: 1000; /* Ensure toggle container is above the map */
     }
     .custom-controls {
       position: absolute;

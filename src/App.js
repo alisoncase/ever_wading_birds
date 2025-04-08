@@ -21,6 +21,12 @@ function App() {
     time: '',
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [sightingsLayer, setSightingsLayer] = useState(null); // Add state for sightings layer
+  const [sightingsFeatures, setSightingsFeatures] = useState([]);
+  const [selectedSpecies, setSelectedSpecies] = useState('');
+  const [isSightingsLayerVisible, setIsSightingsLayerVisible] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const mapDivRef = useRef(null);
   const viewRef = useRef(null);
@@ -263,6 +269,70 @@ function App() {
 
     fetchBirds();
 
+    const fetchSightingsLayer = async () => {
+      const { data, error } = await supabase.from('sightings').select('*');
+      if (error) {
+        console.error('Error fetching sightings:', error);
+        return null;
+      }
+    
+      const features = data.map((sighting, index) => ({
+        geometry: {
+          type: 'point',
+          longitude: sighting.lon,
+          latitude: sighting.lat,
+        },
+        attributes: {
+          sighting_id: sighting.sighting_id,
+          species: sighting.species,
+          date: sighting.date,
+          time: sighting.time,
+        },
+      }));
+    
+      setSightingsFeatures(features); // Store the features in state
+    
+      const sightingsLayer = new FeatureLayer({
+        source: features,
+        fields: [
+          { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
+          { name: 'species', alias: 'Species', type: 'string' },
+          { name: 'date', alias: 'Date', type: 'date' },
+          { name: 'time', alias: 'Time', type: 'string' },
+        ],
+        objectIdField: 'sighting_id',
+        geometryType: 'point',
+        spatialReference: { wkid: 4326 },
+        renderer: {
+          type: 'simple',
+          symbol: {
+            type: 'simple-marker',
+            color: 'blue',
+            size: '8px',
+            outline: {
+              color: 'white',
+              width: 1,
+            },
+          },
+        },
+        title: 'Sightings',
+        visible: false, // Initially hidden
+        popupTemplate: {
+          title: 'Sighting Details',
+          content: `
+            <b>Species:</b> {species}<br>
+            <b>Date:</b> {date}<br>
+            <b>Time:</b> {time}
+          `,
+        },
+      });
+    
+      webMap.add(sightingsLayer);
+      setSightingsLayer(sightingsLayer); // Save the layer in state for toggling and filtering
+    };
+
+    fetchSightingsLayer();
+
     // Cleanup function to destroy the map view when the component unmounts
     return () => {
       console.log("Destroying MapView...");
@@ -293,11 +363,39 @@ function App() {
     }
   };
 
-  const toggleLayerVisibility = (poitype) => {
-    const layer = poiLayers[poitype];
-    if (layer) {
-      layer.visible = !layer.visible;
-      setPoiLayers({ ...poiLayers, [poitype]: layer });
+  const toggleLayerVisibility = (layerType) => {
+    const view = viewRef.current;
+  
+    if (layerType === 'sightings') {
+      if (sightingsLayer) {
+        const newVisibility = !isSightingsLayerVisible;
+        sightingsLayer.visible = newVisibility;
+  
+        // Explicitly update the layer visibility in the map
+        if (view) {
+          const layerInMap = view.map.findLayerById(sightingsLayer.id);
+          if (layerInMap) {
+            layerInMap.visible = newVisibility;
+          }
+        }
+  
+        setIsSightingsLayerVisible(newVisibility); // Update the visibility state
+      }
+    } else {
+      const layer = poiLayers[layerType];
+      if (layer) {
+        layer.visible = !layer.visible;
+  
+        // Explicitly update the layer visibility in the map
+        if (view) {
+          const layerInMap = view.map.findLayerById(layer.id);
+          if (layerInMap) {
+            layerInMap.visible = layer.visible;
+          }
+        }
+  
+        setPoiLayers({ ...poiLayers, [layerType]: layer });
+      }
     }
   };
 
@@ -338,6 +436,84 @@ function App() {
     setFormData({ species: '', lat: '', lon: '', date: '', time: '' });
     setSelectedBird(null);
     setFormSubmitted(false); // Show the form again
+  };
+
+  const applySightingsFilters = () => {
+    if (!sightingsLayer || sightingsFeatures.length === 0) {
+      console.error('Sightings layer or its features are not initialized.');
+      return;
+    }
+  
+    const filteredFeatures = sightingsFeatures.filter((feature) => {
+      const { species, date } = feature.attributes;
+  
+      // Filter by species
+      if (selectedSpecies && species !== selectedSpecies) {
+        return false;
+      }
+  
+      // Filter by date range
+      if (startDate && new Date(date) < new Date(startDate)) {
+        return false;
+      }
+      if (endDate && new Date(date) > new Date(endDate)) {
+        return false;
+      }
+  
+      return true;
+    });
+  
+    const view = viewRef.current;
+  
+    // Remove the existing sightings layer from the map
+    if (view && sightingsLayer) {
+      const layerInMap = view.map.findLayerById(sightingsLayer.id);
+      if (layerInMap) {
+        view.map.remove(layerInMap);
+      }
+    }
+  
+    // Create a new sightings layer with the filtered features
+    const newSightingsLayer = new FeatureLayer({
+      source: filteredFeatures,
+      fields: [
+        { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
+        { name: 'species', alias: 'Species', type: 'string' },
+        { name: 'date', alias: 'Date', type: 'date' },
+        { name: 'time', alias: 'Time', type: 'string' },
+      ],
+      objectIdField: 'sighting_id',
+      geometryType: 'point',
+      spatialReference: { wkid: 4326 },
+      renderer: {
+        type: 'simple',
+        symbol: {
+          type: 'simple-marker',
+          color: 'blue',
+          size: '8px',
+          outline: {
+            color: 'white',
+            width: 1,
+          },
+        },
+      },
+      title: 'Sightings',
+      visible: isSightingsLayerVisible, // Use the current visibility state
+      popupTemplate: {
+        title: 'Sighting Details',
+        content: `
+          <b>Species:</b> {species}<br>
+          <b>Date:</b> {date}<br>
+          <b>Time:</b> {time}
+        `,
+      },
+    });
+  
+    // Add the new layer to the map and update the state
+    if (view) {
+      view.map.add(newSightingsLayer);
+    }
+    setSightingsLayer(newSightingsLayer);
   };
 
   return (
@@ -456,20 +632,81 @@ function App() {
                     </form>
                   )}
                 </div>
-                <div className="layer-toggles">
-                  <h5>Points of Interest</h5>
-                  {Object.keys(poiLayers).map((poitype) => (
-                    <div key={poitype} className="form-check">
+                <div className="layer-toggles-container">
+                  <div className="layer-toggles">
+                    <h5>Points of Interest</h5>
+                    {Object.keys(poiLayers).map((poitype) => (
+                      <div key={poitype} className="form-check">
+                        <input
+                          type="checkbox"
+                          id={poitype}
+                          className="form-check-input"
+                          checked={poiLayers[poitype].visible}
+                          onChange={() => toggleLayerVisibility(poitype)}
+                        />
+                        <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                      </div>
+                    ))}
+                  </div>
+                
+                  <div className="layer-toggles">
+                    <h5>Sightings</h5>
+                    <div className="form-check">
                       <input
                         type="checkbox"
-                        id={poitype}
+                        id="sightingsLayerToggle"
                         className="form-check-input"
-                        checked={poiLayers[poitype].visible}
-                        onChange={() => toggleLayerVisibility(poitype)}
+                        checked={isSightingsLayerVisible}
+                        onChange={() => toggleLayerVisibility('sightings')}
                       />
-                      <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                      <label htmlFor="sightingsLayerToggle" className="form-check-label">
+                        View Sightings
+                      </label>
                     </div>
-                  ))}
+
+                    <div className="mb-3">
+                      <label htmlFor="speciesFilter" className="form-label">Filter by Species:</label>
+                      <select
+                        id="speciesFilter"
+                        className="form-select"
+                        value={selectedSpecies}
+                        onChange={(e) => setSelectedSpecies(e.target.value)}
+                      >
+                        <option value="">-- All Species --</option>
+                        {birds.map((bird) => (
+                          <option key={bird.species} value={bird.species}>
+                            {bird.species}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="startDate" className="form-label">Start Date:</label>
+                      <input
+                        type="date"
+                        id="startDate"
+                        className="form-control"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="endDate" className="form-label">End Date:</label>
+                      <input
+                        type="date"
+                        id="endDate"
+                        className="form-control"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+
+                    <button className="btn btn-primary w-100" onClick={applySightingsFilters}>
+                      Apply Filters
+                    </button>
+                  </div>
                 </div>
               </div>
             }
