@@ -45,7 +45,7 @@ function App() {
       container: mapDivRef.current, // Use the mapDivRef
       map: webMap,
       center: [-80.898651, 25.286615],
-      zoom: 8,
+      zoom: 9,
       ui: {
         components: ["zoom", "attribution"], // Enable default zoom and attribution controls
       },
@@ -141,7 +141,6 @@ function App() {
             type: 'simple',
             symbol: {
               type: 'simple-line',
-              //color: color,
               color: `rgba(${color}, 0.5)`,
               width: 1,
             },
@@ -159,12 +158,15 @@ function App() {
         });
       };
 
-      //const roadsLayer = await fetchLayerData('roads', 'Roads', '161, 118, 107'); // RGB for roads
       const roadsLayer = await fetchLayerData('roads', 'Roads', '255, 255, 255'); // RGB for roads
       const trailsLayer = await fetchLayerData('trails', 'Trails', '77, 80, 75'); // RGB for trails
 
       if (roadsLayer) webMap.add(roadsLayer);
       if (trailsLayer) webMap.add(trailsLayer);
+
+      // Reorder Trails and Roads to the back
+      if (roadsLayer) webMap.layers.reorder(roadsLayer, 0); // Move Roads to the back
+      if (trailsLayer) webMap.layers.reorder(trailsLayer, 0); // Move Trails to the back
     };
 
     fetchRoadsAndTrails();
