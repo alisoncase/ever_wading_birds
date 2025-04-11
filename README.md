@@ -1,4 +1,4 @@
-# Everglade National Park Wading Bird Sighting App
+# Everglades National Park Wading Bird Sighting App
 
 ## Author
 **Alison Case**
