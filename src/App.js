@@ -625,7 +625,7 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router basename="/ever_wading_birds"> {/* Add the basename */}
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route
