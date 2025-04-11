@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[88345],{88345:e=>{e.exports=function(){throw new Error("ws does not work in the browser. Browser clients must use the native WebSocket object")}}}]);
