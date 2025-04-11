@@ -2,7 +2,7 @@
     "name": "ever-wading-birds",
     "version": "0.1.0",
     "private": true,
-    "homepage": "./",
+    "homepage": "https://alisoncase.github.io/ever_wading_birds",
     "type": "module",
     "dependencies": {
         "@arcgis/core": "^4.25.0",
@@ -14,10 +14,12 @@
         "react-scripts": "5.0.0"
     },
     "scripts": {
-      "start": "craco start",
-      "build": "craco build",
-      "test": "craco test",
-      "eject": "react-scripts eject"
+        "start": "craco start",
+        "build": "craco build",
+        "test": "craco test",
+        "eject": "react-scripts eject",
+        "predeploy": "npm run build",
+        "deploy": "gh-pages -d build"
     },
     "browserslist": {
         "production": [
@@ -31,10 +33,13 @@
             "last 1 safari version"
         ]
     },
-   "exports": {
+    "exports": {
         ".": {
             "import": "./src/index.js",
             "require": "./src/index.js"
         }
+    },
+    "devDependencies": {
+        "gh-pages": "^6.3.0"
     }
 }
