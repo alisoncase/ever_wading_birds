@@ -1,6 +1,7 @@
 import React, { useEffect, useState, Suspense, useRef } from 'react';
 import MapView from '@arcgis/core/views/MapView.js';
 import WebMap from '@arcgis/core/WebMap.js';
+import Locate from '@arcgis/core/widgets/Locate.js';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer.js';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient.js';
@@ -17,8 +18,8 @@ function App() {
     species: '',
     lat: '',
     lon: '',
-    date: '',
-    time: '',
+    date: new Date().toISOString().split('T')[0], // Pre-populate with the current date in YYYY-MM-DD format
+    time: new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5), // Pre-populate with the current time in HH:mm format
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [sightingsLayer, setSightingsLayer] = useState(null); // Add state for sightings layer
@@ -56,6 +57,21 @@ function App() {
     });
 
     viewRef.current = view;
+
+    // Add the Locate widget
+    const locateWidget = new Locate({
+      view: view, // Attach the widget to the MapView
+      useHeadingEnabled: false, // Disable map rotation based on device heading
+      goToOverride: (locateViewpoint) => {
+        locateViewpoint.target.scale = 5000; // Set the zoom scale when locating
+        return locateViewpoint;
+      },
+    });
+
+    // Add the Locate widget to the top-left corner of the map
+    view.ui.add(locateWidget, {
+      position: "top-left",
+    });
 
     // Disable popups for basemap layers
     webMap.basemap.baseLayers.forEach((layer) => {
@@ -291,19 +307,20 @@ function App() {
         attributes: {
           sighting_id: sighting.sighting_id,
           species: sighting.species,
-          date: sighting.date,
+          formatted_date: new Date(sighting.date).toLocaleDateString('en-US'), // Ensure this is a string
           time: sighting.time,
         },
       }));
     
       setSightingsFeatures(features); // Store the features in state
+      console.log('Fetched Sightings Data:', data);
     
       const sightingsLayer = new FeatureLayer({
         source: features,
         fields: [
           { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
           { name: 'species', alias: 'Species', type: 'string' },
-          { name: 'date', alias: 'Date', type: 'date' },
+          { name: 'formatted_date', alias: 'Date', type: 'string' }, // Field name is 'formatted_date'
           { name: 'time', alias: 'Time', type: 'string' },
         ],
         objectIdField: 'sighting_id',
@@ -324,7 +341,7 @@ function App() {
           title: 'Sighting Details',
           content: `
             <b>Species:</b> {species}<br>
-            <b>Date:</b> {date}<br>
+            <b>Date:</b> {formatted_date}<br> <!-- Use the renamed field -->
             <b>Time:</b> {time}
           `,
         },
@@ -416,7 +433,7 @@ function App() {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     const { species, lat, lon, date, time } = formData;
-
+  
     // Use "lat" and "lon" to match the Supabase table schema
     const newSighting = {
       species,
@@ -425,13 +442,91 @@ function App() {
       date,
       time,
     };
-
+  
     const { error } = await supabase.from('sightings').insert([newSighting]);
     if (error) {
       console.error('Error submitting sighting:', error);
     } else {
       console.log('Sighting submitted successfully:', newSighting);
       setFormSubmitted(true); // Show the thank-you message
+  
+      // Re-fetch sightings data and update the layer
+      const { data, error: fetchError } = await supabase.from('sightings').select('*');
+      if (fetchError) {
+        console.error('Error fetching updated sightings:', fetchError);
+      } else {
+        console.log('Updated sightings data:', data);
+        console.log('Sightings data:', data.map((s) => s.date));
+  
+        // Update the sightings features in state
+        const updatedFeatures = data.map((sighting, index) => ({
+          geometry: {
+            type: 'point',
+            longitude: sighting.lon,
+            latitude: sighting.lat,
+          },
+          attributes: {
+            sighting_id: sighting.sighting_id,
+            species: sighting.species,
+            formatted_date: new Date(sighting.date).toLocaleDateString('en-US'), // Ensure this is a string
+            time: sighting.time,
+          },
+        }));
+        setSightingsFeatures(updatedFeatures);
+        console.log('Updated Features:', updatedFeatures);
+  
+        // Remove the old sightings layer from the map
+        const view = viewRef.current;
+        if (view && sightingsLayer) {
+          const layerInMap = view.map.findLayerById(sightingsLayer.id);
+          if (layerInMap) {
+            view.map.remove(layerInMap);
+          }
+        }
+  
+        // Create a new sightings layer with the updated features
+        const newSightingsLayer = new FeatureLayer({
+          source: updatedFeatures,
+          fields: [
+            { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
+            { name: 'species', alias: 'Species', type: 'string' },
+            { name: 'formatted_date', alias: 'Date', type: 'string' }, // Field name is 'formatted_date'
+            { name: 'time', alias: 'Time', type: 'string' },
+          ],
+          objectIdField: 'sighting_id',
+          geometryType: 'point',
+          spatialReference: { wkid: 4326 },
+          renderer: {
+            type: 'simple',
+            symbol: {
+              type: 'picture-marker',
+              url: '/img/Bird.svg', // Path to the Bird.svg icon
+              width: '24px',
+              height: '24px',
+            },
+          },
+          title: 'Sightings',
+          visible: isSightingsLayerVisible, // Use the current visibility state
+          popupTemplate: {
+            title: 'Sighting Details',
+            content: (feature) => {
+              const attributes = feature.graphic.attributes;
+              console.log('Popup Attributes:', attributes);
+              return `
+                <b>Species:</b> ${attributes.species}<br>
+                <b>Date:</b> ${attributes.formatted_date}<br>
+                <b>Time:</b> ${attributes.time}
+              `;
+            },
+          },
+        });
+  
+        // Add the new sightings layer to the map
+        if (view) {
+          view.map.add(newSightingsLayer);
+        }
+        setSightingsLayer(newSightingsLayer); // Update the state with the new layer
+      }
     }
   };
 
@@ -482,7 +577,7 @@ function App() {
       fields: [
         { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
         { name: 'species', alias: 'Species', type: 'string' },
-        { name: 'date', alias: 'Date', type: 'date' },
+        { name: 'formatted_date', alias: 'Date', type: 'string' }, // Field name is 'formatted_date'
         { name: 'time', alias: 'Time', type: 'string' },
       ],
       objectIdField: 'sighting_id',
@@ -503,9 +598,22 @@ function App() {
         title: 'Sighting Details',
         content: `
           <b>Species:</b> {species}<br>
-          <b>Date:</b> {date}<br>
+          <b>Date:</b> {expression/formatDate}<br>
           <b>Time:</b> {time}
         `,
+        expressionInfos: [
+          {
+            name: 'formatDate',
+            title: 'Formatted Date',
+            expression: `
+              var dateField = $feature.formatted_date;
+              if (IsEmpty(dateField)) {
+                return "No Date";
+              }
+              return dateField; // Use the preformatted string
+            `,
+          },
+        ],
       },
     });
   
@@ -576,6 +684,11 @@ function App() {
                         </div>
                       )}
 
+                      {/* Add the message here */}
+                      <p className="text-muted mb-3">
+                        Click anywhere on the map to populate the latitude and longitude fields.
+                      </p>
+
                       <div className="mb-3">
                         <label htmlFor="lat" className="form-label">Latitude:</label>
                         <input
@@ -609,8 +722,8 @@ function App() {
                           id="date"
                           name="date"
                           className="form-control"
-                          value={formData.date}
-                          onChange={handleFormChange}
+                          value={formData.date} // Bind to formData.date
+                          onChange={handleFormChange} // Allow user to modify
                           required
                         />
                       </div>
@@ -622,8 +735,8 @@ function App() {
                           id="time"
                           name="time"
                           className="form-control"
-                          value={formData.time}
-                          onChange={handleFormChange}
+                          value={formData.time} // Bind to formData.time
+                          onChange={handleFormChange} // Allow user to modify
                           required
                         />
                       </div>
@@ -657,18 +770,20 @@ function App() {
                       </div>
                       {!isPOILayersMinimized && (
                         <>
-                          {Object.keys(poiLayers).map((poitype) => (
-                            <div key={poitype} className="form-check">
-                              <input
-                                type="checkbox"
-                                id={poitype}
-                                className="form-check-input"
-                                checked={poiLayers[poitype].visible}
-                                onChange={() => toggleLayerVisibility(poitype)}
-                              />
-                              <label htmlFor={poitype} className="form-check-label">{poitype}</label>
-                            </div>
-                          ))}
+                          {Object.keys(poiLayers)
+                            .sort((a, b) => a.localeCompare(b)) // Sort the keys alphabetically
+                            .map((poitype) => (
+                              <div key={poitype} className="form-check">
+                                <input
+                                  type="checkbox"
+                                  id={poitype}
+                                  className="form-check-input"
+                                  checked={poiLayers[poitype].visible}
+                                  onChange={() => toggleLayerVisibility(poitype)}
+                                />
+                                <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                              </div>
+                            ))}
                         </>
                       )}
                     </div>
