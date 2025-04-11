@@ -1,10 +1,11 @@
 import React, { useEffect, useState, Suspense, useRef } from 'react';
 import MapView from '@arcgis/core/views/MapView.js';
 import WebMap from '@arcgis/core/WebMap.js';
-import Locate from '@arcgis/core/widgets/Locate.js';
+import "@arcgis/map-components/components/arcgis-locate";
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer.js';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { supabase } from './supabaseClient.js';
+import "@arcgis/map-components/components/arcgis-home";
 
 const Home = React.lazy(() => import('./pages/Home.js'));
 const About = React.lazy(() => import('./pages/About.js'));
@@ -58,21 +59,6 @@ function App() {
 
     viewRef.current = view;
 
-    // Add the Locate widget
-    const locateWidget = new Locate({
-      view: view, // Attach the widget to the MapView
-      useHeadingEnabled: false, // Disable map rotation based on device heading
-      goToOverride: (locateViewpoint) => {
-        locateViewpoint.target.scale = 5000; // Set the zoom scale when locating
-        return locateViewpoint;
-      },
-    });
-
-    // Add the Locate widget to the top-left corner of the map
-    view.ui.add(locateWidget, {
-      position: "top-left",
-    });
-
     // Disable popups for basemap layers
     webMap.basemap.baseLayers.forEach((layer) => {
       layer.popupEnabled = false;
@@ -83,6 +69,17 @@ function App() {
 
       // Explicitly position the zoom buttons in the top-left corner
       view.ui.move("zoom", "top-left");
+
+      // Add the Locate widget
+      const locateComponent = document.createElement('arcgis-locate');
+      locateComponent.view = view; // Attach the MapView to the component
+      locateComponent.scale = 5000; // Set the zoom scale when locating
+      view.ui.add(locateComponent, "top-left"); // Add to the top-left corner
+
+      // Add the Home widget
+      const homeComponent = document.createElement('arcgis-home');
+      homeComponent.view = view; // Attach the MapView to the component
+      view.ui.add(homeComponent, "top-left"); // Add to the top-left corner
 
       // Attach click event listener for popups and form auto-population
       view.on('click', async (event) => {
@@ -313,7 +310,7 @@ function App() {
       }));
     
       setSightingsFeatures(features); // Store the features in state
-      console.log('Fetched Sightings Data:', data);
+
     
       const sightingsLayer = new FeatureLayer({
         source: features,
