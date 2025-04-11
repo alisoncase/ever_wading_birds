@@ -330,7 +330,7 @@ function App() {
           type: 'simple',
           symbol: {
             type: 'picture-marker',
-            url: '/img/Bird.svg', // Path to the Bird.svg icon
+            url: `${process.env.PUBLIC_URL}/img/Bird.svg`, // Path to the Bird.svg icon
             width: '24px',
             height: '24px',
           },
@@ -587,7 +587,7 @@ function App() {
         type: 'simple',
         symbol: {
           type: 'picture-marker',
-          url: '/img/Bird.svg', // Path to the Bird.svg icon
+          url: `${process.env.PUBLIC_URL}/img/Bird.svg`, // Path to the Bird.svg icon
           width: '24px',
           height: '24px',
         },
