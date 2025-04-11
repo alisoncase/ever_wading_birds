@@ -196,18 +196,18 @@ function App() {
       }
 
       const poitypeIcons = {
-        "Boat Launch": "/img/Boat_Launch.svg",
-        "Campground": "/img/Campground.svg",
-        "Campsite": "/img/Campsite.svg",
-        "Canoe / Kayak Access": "/img/Canoe_Kayak_Access.svg",
-        "Entrance Station": "/img/Entrance_Station.svg",
-        "Food Service": "/img/Food_Service.svg",
-        "Parking Lot": "/img/Parking_Lot.svg",
-        "Picnic Area": "/img/Picnic_Area.svg",
-        "Ranger Station": "/img/Ranger_Station.svg",
-        "Restroom": "/img/Restroom.svg",
-        "Trailhead": "/img/Trailhead.svg",
-        "Visitor Center": "/img/Visitor_Center.svg",
+        "Boat Launch": `${process.env.PUBLIC_URL}/img/Boat_Launch.svg`,
+        "Campground": `${process.env.PUBLIC_URL}/img/Campground.svg`,
+        "Campsite": `${process.env.PUBLIC_URL}/img/Campsite.svg`,
+        "Canoe / Kayak Access": `${process.env.PUBLIC_URL}/img/Canoe_Kayak_Access.svg`,
+        "Entrance Station": `${process.env.PUBLIC_URL}/img/Entrance_Station.svg`,
+        "Food Service": `${process.env.PUBLIC_URL}/img/Food_Service.svg`,
+        "Parking Lot": `${process.env.PUBLIC_URL}/img/Parking_Lot.svg`,
+        "Picnic Area": `${process.env.PUBLIC_URL}/img/Picnic_Area.svg`,
+        "Ranger Station": `${process.env.PUBLIC_URL}/img/Ranger_Station.svg`,
+        "Restroom": `${process.env.PUBLIC_URL}/img/Restroom.svg`,
+        "Trailhead": `${process.env.PUBLIC_URL}/img/Trailhead.svg`,
+        "Visitor Center": `${process.env.PUBLIC_URL}/img/Visitor_Center.svg`,
       };
 
       const poiLayersData = {};
@@ -500,7 +500,7 @@ function App() {
             type: 'simple',
             symbol: {
               type: 'picture-marker',
-              url: '/img/Bird.svg', // Path to the Bird.svg icon
+              url: `${process.env.PUBLIC_URL}/img/Bird.svg`, // Use PUBLIC_URL for the correct path
               width: '24px',
               height: '24px',
             },
