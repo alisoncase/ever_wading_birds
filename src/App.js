@@ -441,89 +441,167 @@ function App() {
       time,
     };
   
-    const { error } = await supabase.from('sightings').insert([newSighting]);
-    if (error) {
-      console.error('Error submitting sighting:', error);
+    const { data: sightingData, error: sightingError } = await supabase
+      .from('sightings')
+      .insert([newSighting])
+      .select('sighting_id'); // Ensure sighting_id is returned
+  
+    if (sightingError) {
+      console.error('Error submitting sighting:', sightingError);
+      return;
+    }
+  
+    const sightingId = sightingData[0].sighting_id; // Assign the sighting_id
+  
+    setFormSubmitted(true); // Show the thank-you message
+  
+    // Re-fetch sightings data and update the layer
+    const { data, error: fetchError } = await supabase.from('sightings').select('*');
+    if (fetchError) {
+      console.error('Error fetching updated sightings:', fetchError);
     } else {
-      console.log('Sighting submitted successfully:', newSighting);
-      setFormSubmitted(true); // Show the thank-you message
+      console.log('Updated sightings data:', data);
+      console.log('Sightings data:', data.map((s) => s.date));
   
-      // Re-fetch sightings data and update the layer
-      const { data, error: fetchError } = await supabase.from('sightings').select('*');
-      if (fetchError) {
-        console.error('Error fetching updated sightings:', fetchError);
-      } else {
-        console.log('Updated sightings data:', data);
-        console.log('Sightings data:', data.map((s) => s.date));
+      // Update the sightings features in state
+      const updatedFeatures = data.map((sighting, index) => ({
+        geometry: {
+          type: 'point',
+          longitude: sighting.lon,
+          latitude: sighting.lat,
+        },
+        attributes: {
+          sighting_id: sighting.sighting_id,
+          species: sighting.species,
+          formatted_date: new Date(sighting.date).toLocaleDateString('en-US'), // Ensure this is a string
+          time: sighting.time,
+        },
+      }));
+      setSightingsFeatures(updatedFeatures);
+      console.log('Updated Features:', updatedFeatures);
   
-        // Update the sightings features in state
-        const updatedFeatures = data.map((sighting, index) => ({
-          geometry: {
-            type: 'point',
-            longitude: sighting.lon,
-            latitude: sighting.lat,
-          },
-          attributes: {
-            sighting_id: sighting.sighting_id,
-            species: sighting.species,
-            formatted_date: new Date(sighting.date).toLocaleDateString('en-US'), // Ensure this is a string
-            time: sighting.time,
-          },
-        }));
-        setSightingsFeatures(updatedFeatures);
-        console.log('Updated Features:', updatedFeatures);
-  
-        // Remove the old sightings layer from the map
-        const view = viewRef.current;
-        if (view && sightingsLayer) {
-          const layerInMap = view.map.findLayerById(sightingsLayer.id);
-          if (layerInMap) {
-            view.map.remove(layerInMap);
-          }
+      // Remove the old sightings layer from the map
+      const view = viewRef.current;
+      if (view && sightingsLayer) {
+        const layerInMap = view.map.findLayerById(sightingsLayer.id);
+        if (layerInMap) {
+          view.map.remove(layerInMap);
         }
+      }
   
-        // Create a new sightings layer with the updated features
-        const newSightingsLayer = new FeatureLayer({
-          source: updatedFeatures,
-          fields: [
-            { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
-            { name: 'species', alias: 'Species', type: 'string' },
-            { name: 'formatted_date', alias: 'Date', type: 'string' }, // Field name is 'formatted_date'
-            { name: 'time', alias: 'Time', type: 'string' },
-          ],
-          objectIdField: 'sighting_id',
-          geometryType: 'point',
-          spatialReference: { wkid: 4326 },
-          renderer: {
-            type: 'simple',
-            symbol: {
-              type: 'picture-marker',
-              url: `${process.env.PUBLIC_URL}/img/Bird.svg`, // Use PUBLIC_URL for the correct path
-              width: '24px',
-              height: '24px',
-            },
+      // Create a new sightings layer with the updated features
+      const newSightingsLayer = new FeatureLayer({
+        source: updatedFeatures,
+        fields: [
+          { name: 'sighting_id', alias: 'Sighting ID', type: 'oid' },
+          { name: 'species', alias: 'Species', type: 'string' },
+          { name: 'formatted_date', alias: 'Date', type: 'string' }, // Field name is 'formatted_date'
+          { name: 'time', alias: 'Time', type: 'string' },
+        ],
+        objectIdField: 'sighting_id',
+        geometryType: 'point',
+        spatialReference: { wkid: 4326 },
+        renderer: {
+          type: 'simple',
+          symbol: {
+            type: 'picture-marker',
+            url: `${process.env.PUBLIC_URL}/img/Bird.svg`, // Use PUBLIC_URL for the correct path
+            width: '24px',
+            height: '24px',
           },
-          title: 'Sightings',
-          visible: isSightingsLayerVisible, // Use the current visibility state
-          popupTemplate: {
-            title: 'Sighting Details',
-            content: (feature) => {
-              const attributes = feature.graphic.attributes;
-              console.log('Popup Attributes:', attributes);
-              return `
-                <b>Species:</b> ${attributes.species}<br>
-                <b>Date:</b> ${attributes.formatted_date}<br>
-                <b>Time:</b> ${attributes.time}
-              `;
-            },
+        },
+        title: 'Sightings',
+        visible: isSightingsLayerVisible, // Use the current visibility state
+        popupTemplate: {
+          title: 'Sighting Details',
+          content: (feature) => {
+            const attributes = feature.graphic.attributes;
+            console.log('Popup Attributes:', attributes);
+            return `
+              <b>Species:</b> ${attributes.species}<br>
+              <b>Date:</b> ${attributes.formatted_date}<br>
+              <b>Time:</b> ${attributes.time}
+            `;
           },
-        });
+        },
+      });
   
-        // Add the new sightings layer to the map
-        if (view) {
-          view.map.add(newSightingsLayer);
-        }
-        setSightingsLayer(newSightingsLayer); // Update the state with the new layer
+      // Add the new sightings layer to the map
+      if (view) {
+        view.map.add(newSightingsLayer);
+      }
+      setSightingsLayer(newSightingsLayer); // Update the state with the new layer
+    }
+
+    // Define a radius of 250 meters
+    const radius = 250;
+
+    // Find and insert nearby POIs
+    const { data: nearbyPOIs, error: poisError } = await supabase.rpc('find_nearby_pois', {
+      lat: parseFloat(lat),
+      lon: parseFloat(lon),
+      radius,
+    });
+
+    if (poisError) {
+      console.error('Error finding nearby POIs:', poisError);
+    } else {
+      const poiEntries = nearbyPOIs.map((poi) => ({
+        sighting_id: sightingId,
+        objectid: poi.objectid, 
+      }));
+      const { error: insertPOIsError } = await supabase
+        .from('pois_near_sightings')
+        .insert(poiEntries);
+
+      if (insertPOIsError) {
+        console.error('Error inserting POIs near sighting:', insertPOIsError);
+      }
+    }
+
+    // Find and insert nearby trails
+    const { data: nearbyTrails, error: trailsError } = await supabase.rpc('find_nearby_trails', {
+      lat: parseFloat(lat),
+      lon: parseFloat(lon),
+      radius,
+    });
+
+    if (trailsError) {
+      console.error('Error finding nearby trails:', trailsError);
+    } else {
+      const trailEntries = nearbyTrails.map((trail) => ({
+        sighting_id: sightingId,
+        objectid: trail.objectid, 
+      }));
+      const { error: insertTrailsError } = await supabase
+        .from('trails_near_sightings')
+        .insert(trailEntries);
+
+      if (insertTrailsError) {
+        console.error('Error inserting trails near sighting:', insertTrailsError);
+      }
+    }
+
+    // Find and insert nearby roads
+    const { data: nearbyRoads, error: roadsError } = await supabase.rpc('find_nearby_roads', {
+      lat: parseFloat(lat),
+      lon: parseFloat(lon),
+      radius,
+    });
+
+    if (roadsError) {
+      console.error('Error finding nearby roads:', roadsError);
+    } else {
+      const roadEntries = nearbyRoads.map((road) => ({
+        sighting_id: sightingId,
+        objectid: road.objectid, 
+      }));
+      const { error: insertRoadsError } = await supabase
+        .from('roads_near_sightings')
+        .insert(roadEntries);
+
+      if (insertRoadsError) {
+        console.error('Error inserting roads near sighting:', insertRoadsError);
       }
     }
   };
