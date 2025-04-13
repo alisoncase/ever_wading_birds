@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/ever_wading_birds/static/js/main.e79a9eea.js",
-    "static/js/13040.2942ba94.chunk.js": "/ever_wading_birds/static/js/13040.2942ba94.chunk.js",
+    "main.js": "/ever_wading_birds/static/js/main.eb20abc6.js",
+    "static/js/13040.4ee9165c.chunk.js": "/ever_wading_birds/static/js/13040.4ee9165c.chunk.js",
     "static/js/83590.db783acd.chunk.js": "/ever_wading_birds/static/js/83590.db783acd.chunk.js",
     "static/js/99440.4ea1bc03.chunk.js": "/ever_wading_birds/static/js/99440.4ea1bc03.chunk.js",
     "static/js/15736.37d6fb3b.chunk.js": "/ever_wading_birds/static/js/15736.37d6fb3b.chunk.js",
@@ -1468,6 +1468,6 @@
     "index.html": "/ever_wading_birds/index.html"
   },
   "entrypoints": [
-    "static/js/main.e79a9eea.js"
+    "static/js/main.eb20abc6.js"
   ]
 }
