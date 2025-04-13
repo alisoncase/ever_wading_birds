@@ -31,6 +31,7 @@ function App() {
   const [isSightingsLayersMinimized, setIsSightingsLayersMinimized] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showSplash, setShowSplash] = useState(true);
 
   const mapDivRef = useRef(null);
   const viewRef = useRef(null);
@@ -871,6 +872,26 @@ function App() {
                       )}
                     </div>
                   </div>
+                  {showSplash && (
+                    <div className="splash-screen">
+                      <div className="splash-content">
+                      <h2>Welcome to the Everglades National Park Wading Bird Sighting App</h2>
+                      <p>This app allows you to:</p>
+                      <ul>
+                          <li>Explore points of interest in the park.</li>
+                          <li>Search and filter bird sightings on the map.</li>
+                          <li>Submit your own bird sightings using the submission form.</li>
+                          <li>Learn about bird species by selecting them on the submission form.</li>
+                      </ul>                      
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => setShowSplash(false)}
+                        >
+                          Get Started
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             }
           />
