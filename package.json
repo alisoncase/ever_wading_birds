@@ -15,12 +15,12 @@
         "react-scripts": "5.0.0"
     },
     "scripts": {
-        "start": "craco start",
-        "build": "craco build",
-        "test": "craco test",
-        "eject": "react-scripts eject",
-        "predeploy": "npm run build",
-        "deploy": "gh-pages -d build --dotfiles"
+  "start": "craco start",
+  "build": "craco build",
+  "test": "craco test",
+  "eject": "react-scripts eject",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d build --dotfiles --no-history"
     },
     "browserslist": {
         "production": [
