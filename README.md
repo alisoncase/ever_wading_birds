@@ -24,7 +24,7 @@ This project was created as part of my coursework at the University of Wisconsin
 - [CRACO](https://github.com/dilanx/craco) (v7.1.0)
 
 ## Code Version
-**Last Updated:** April 11, 2025
+**Last Updated:** April 24, 2025
 
 ## Installation and Deployment
 ### Prerequisites

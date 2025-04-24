@@ -13,11 +13,11 @@
   <style>
     /* Scoped reset for the MapView container */
     #mapViewDiv {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      pointer-events: auto; /* Ensure interactions are enabled */
-      z-index: 0; /* Ensure it is below the popup and other UI elements */
+      position: relative; /* Ensure the map container is positioned relative to its parent */
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: hidden; /* Prevent content from overflowing */
+      z-index: 0; /* Ensure it is below other UI elements */
     }
 
     .esri-ui-top-left {
@@ -90,23 +90,78 @@
       font-size: 14px;
       cursor: pointer;
     }
+    /* Adjust the overall popup container */
     .esri-popup {
-      display: block !important;
+      background-color: white !important; /* Set the background color to white */
+      border: 1px solid #ccc !important; /* Add a light border */
+      border-radius: 5px !important; /* Add rounded corners */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important; /* Add a subtle shadow */
+      max-width: 300px !important; /* Set a fixed width */
+      max-height: 400px !important; /* Set a fixed height */
+      overflow: auto !important; /* Allow scrolling for content */
+      font-size: 12px !important; /* Reduce font size */
+      line-height: 1.5 !important; /* Improve readability */
       position: absolute !important;
-      z-index: 1000 !important;
-      pointer-events: auto !important;
-      background-color: white !important; /* Set white background */
-      border: 1px solid #ccc; /* Add a light border */
-      border-radius: 5px; /* Add rounded corners */
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
-    }
-    .esri-popup__main-container {
-      max-width: 400px;
-      max-height: 200px;
-      overflow: auto;
-      padding: 10px !important; /* Add padding inside the popup */
+      z-index: 10 !important; /* Ensure it is above the map */
     }
 
+    /* Add padding to the popup container */
+    .esri-popup__main-container {
+      padding: 5px !important; /* Add padding around the content */
+      box-sizing: border-box; /* Ensure padding is included in the element's dimensions */
+    }
+
+    /* Adjust the popup header */
+    .esri-popup__header {
+      background-color: #f8f9fa !important; /* Light gray background */
+      padding: 5px 10px !important; /* Reduce padding */
+      font-size: 10px !important; /* Adjust header font size */
+      border-bottom: 1px solid #ddd !important; /* Add a border below the header */
+    }
+
+    .esri-popup__title {
+      font-size: 14px !important; /* Set the font size to 12px */
+      font-weight: normal !important; /* Adjust font weight if needed */
+      color: #333 !important; /* Set a custom text color */
+      margin: 0 !important; /* Remove extra margin */
+      line-height: 1.2 !important; /* Adjust line height */
+    }
+
+
+    /* Adjust the popup content */
+    .esri-popup__content {
+      padding: 10px !important; /* Add padding */
+      font-size: 12px !important; /* Reduce font size */
+      line-height: 1.5 !important; /* Improve readability */
+      background-color: white !important; /* Ensure the content background is white */
+    }
+
+    /* Adjust the popup footer */
+    .esri-popup__footer {
+      background-color: #f8f9fa !important; /* Light gray background */
+      padding: 5px 10px !important; /* Reduce padding */
+      font-size: 12px !important; /* Reduce font size */
+      border-top: 1px solid #ddd !important; /* Add a border above the footer */
+    }
+
+    /* Adjust the popup actions (minimize, close, dock buttons) */
+    .esri-popup__button-container {
+      display: flex !important; /* Ensure buttons are aligned horizontally */
+      gap: 1px !important; /* Reduce spacing between buttons */
+      justify-content: flex-end; /* Align buttons to the right */
+      padding: 1px !important; /* Reduce padding around the buttons */
+    }
+
+    /* Adjust individual popup buttons */
+    .esri-popup__button {
+      width: 10px !important; /* Adjust button size */
+      height: 10px !important;
+      margin: 0 !important; /* Remove extra margin */
+      padding: 0 !important; /* Remove extra padding */
+      background-color: #f8f9fa !important; /* Light gray background */
+      border: 1px solid #ccc !important; /* Add a light border */
+      border-radius: 1px !important; /* Add rounded corners */
+    }
     .bird-image {
       max-width: 100%; /* Ensure the image doesn't exceed the container width */
       max-height: 200px; /* Set a maximum height for the image */
@@ -222,6 +277,31 @@
       font-size: 16px;
       padding: 10px 20px;
     }
+    .form-panel.minimized {
+      height: 60px;
+      overflow: hidden;
+    }
+
+    .form-panel .form-header {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .form-panel.minimized .form-header {
+      border-bottom: none;
+    }
+    .form-panel .form-header h3 {
+    font-size: 1.5rem; /* Default font size for expanded state */
+    transition: font-size 0.3s ease; /* Smooth transition for font size changes */
+  }
+
+  .form-panel.minimized .form-header h3 {
+    font-size: 1rem; /* Smaller font size for minimized state */
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+  }
   </style>
   
 </head>

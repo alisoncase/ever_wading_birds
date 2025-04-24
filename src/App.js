@@ -11,6 +11,21 @@ const Home = React.lazy(() => import('./pages/Home.js'));
 const About = React.lazy(() => import('./pages/About.js'));
 
 function App() {
+  const poitypeIcons = {
+    "Boat Launch": `${process.env.PUBLIC_URL}/img/Boat_Launch.svg`,
+    "Campground": `${process.env.PUBLIC_URL}/img/Campground.svg`,
+    "Campsite": `${process.env.PUBLIC_URL}/img/Campsite.svg`,
+    "Canoe / Kayak Access": `${process.env.PUBLIC_URL}/img/Canoe_Kayak_Access.svg`,
+    "Entrance Station": `${process.env.PUBLIC_URL}/img/Entrance_Station.svg`,
+    "Food Service": `${process.env.PUBLIC_URL}/img/Food_Service.svg`,
+    "Parking Lot": `${process.env.PUBLIC_URL}/img/Parking_Lot.svg`,
+    "Picnic Area": `${process.env.PUBLIC_URL}/img/Picnic_Area.svg`,
+    "Ranger Station": `${process.env.PUBLIC_URL}/img/Ranger_Station.svg`,
+    "Restroom": `${process.env.PUBLIC_URL}/img/Restroom.svg`,
+    "Trailhead": `${process.env.PUBLIC_URL}/img/Trailhead.svg`,
+    "Visitor Center": `${process.env.PUBLIC_URL}/img/Visitor_Center.svg`,
+  };
+
   const [sightings, setSightings] = useState([]);
   const [poiLayers, setPoiLayers] = useState({});
   const [birds, setBirds] = useState([]);
@@ -32,6 +47,7 @@ function App() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showSplash, setShowSplash] = useState(true);
+  const [isFormMinimized, setIsFormMinimized] = useState(false);
 
   const mapDivRef = useRef(null);
   const viewRef = useRef(null);
@@ -55,8 +71,20 @@ function App() {
       popup: {
         dockEnabled: false, // Ensure the popup is not docked
         visible: true,      // Ensure the popup is visible
+        visibleElements: {
+          collapseButton: false, // Remove the collapse (minimize) button
+        },
       },
     });
+    
+    view.popup.dockEnabled = false; // Disable the dock button
+    view.popup.dockOptions = {
+      buttonEnabled: false, // Ensure the dock button is not displayed
+    };
+    view.popup.collapseButton = false; // Disable the collapse button
+    // Set the popup heading level to <h3>
+    view.popup.headingLevel = 3;
+    
 
     viewRef.current = view;
 
@@ -163,7 +191,7 @@ function App() {
           visible: true,
           popupEnabled: true,
           popupTemplate: {
-            title: '{maplabel}',
+            title: `<span style="font-size: 14px; font-weight: bold; color: #333;">{maplabel}</span>`,
             content: '{maplabel}',
           },
           elevationInfo: {
@@ -193,21 +221,6 @@ function App() {
         return;
       }
 
-      const poitypeIcons = {
-        "Boat Launch": `${process.env.PUBLIC_URL}/img/Boat_Launch.svg`,
-        "Campground": `${process.env.PUBLIC_URL}/img/Campground.svg`,
-        "Campsite": `${process.env.PUBLIC_URL}/img/Campsite.svg`,
-        "Canoe / Kayak Access": `${process.env.PUBLIC_URL}/img/Canoe_Kayak_Access.svg`,
-        "Entrance Station": `${process.env.PUBLIC_URL}/img/Entrance_Station.svg`,
-        "Food Service": `${process.env.PUBLIC_URL}/img/Food_Service.svg`,
-        "Parking Lot": `${process.env.PUBLIC_URL}/img/Parking_Lot.svg`,
-        "Picnic Area": `${process.env.PUBLIC_URL}/img/Picnic_Area.svg`,
-        "Ranger Station": `${process.env.PUBLIC_URL}/img/Ranger_Station.svg`,
-        "Restroom": `${process.env.PUBLIC_URL}/img/Restroom.svg`,
-        "Trailhead": `${process.env.PUBLIC_URL}/img/Trailhead.svg`,
-        "Visitor Center": `${process.env.PUBLIC_URL}/img/Visitor_Center.svg`,
-      };
-
       const poiLayersData = {};
       const poiLayers = []; // Keep track of POI layers for reordering
 
@@ -236,7 +249,7 @@ function App() {
             visible: false,
             popupEnabled: true,
             popupTemplate: {
-              title: '{maplabel}',
+              title: `<span style="font-size: 14px; font-weight: bold; color: #333;">{maplabel}</span>`,
               content: `
                 <b>Type:</b> {poitype}<br>
                 <b>Name:</b> {maplabel}
@@ -336,7 +349,7 @@ function App() {
         title: 'Sightings',
         visible: false, // Initially hidden
         popupTemplate: {
-          title: 'Sighting Details',
+          title: `<span style="font-size: 14px; font-weight: bold; color: #333;">Sighting Details</span>`,
           content: `
             <b>Species:</b> {species}<br>
             <b>Date:</b> {formatted_date}<br> <!-- Use the renamed field -->
@@ -513,7 +526,7 @@ function App() {
         title: 'Sightings',
         visible: isSightingsLayerVisible, // Use the current visibility state
         popupTemplate: {
-          title: 'Sighting Details',
+          title: `<span style="font-size: 14px; font-weight: bold; color: #333;">Sighting Details</span>`,
           content: (feature) => {
             const attributes = feature.graphic.attributes;
             console.log('Popup Attributes:', attributes);
@@ -671,7 +684,7 @@ function App() {
       title: 'Sightings',
       visible: isSightingsLayerVisible, // Use the current visibility state
       popupTemplate: {
-        title: 'Sighting Details',
+        title: `<span style="font-size: 14px; font-weight: bold; color: #333;">Sighting Details</span>`,
         content: `
           <b>Species:</b> {species}<br>
           <b>Date:</b> {expression/formatDate}<br>
@@ -709,116 +722,127 @@ function App() {
             element={
               <div>
                 <div id="mapViewDiv" ref={mapDivRef} style={{ height: '100vh', width: '100%' }}></div>
-                <div className="form-panel">
-                  <h3 className="text-center">Submit a Bird Sighting</h3>
-                  {formSubmitted ? (
-                    <div className="thank-you-message text-center">
-                      <h4>Thank you for your submission!</h4>
-                      <button className="btn btn-primary mt-3" onClick={resetForm}>
-                        Submit Another Sighting
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleFormSubmit}>
-                      <div className="mb-3">
-                        <label htmlFor="species" className="form-label">Select Bird Species:</label>
-                        <select
-                          id="species"
-                          name="species"
-                          className="form-select"
-                          value={formData.species}
-                          onChange={handleBirdChange}
-                          required
-                        >
-                          <option value="">-- Select a Species --</option>
-                          {birds.map((bird) => (
-                            <option key={bird.species} value={bird.species}>
-                              {bird.species}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {selectedBird && (
-                        <div className="bird-details mb-3">
-                          <h4>{selectedBird.species}</h4>
-                          <img
-                            src={selectedBird.photo}
-                            alt={selectedBird.species}
-                            className="img-fluid bird-image mb-2" // Add the bird-image class here
-                          />
-                          <p>
-                            <strong>Photo Attribution:</strong>{' '}
-                            <span
-                              dangerouslySetInnerHTML={{ __html: selectedBird.photo_attr }}
-                            ></span>
-                          </p>
-                          <p>{selectedBird.info}</p>
-                          <a href={selectedBird.info_link} target="_blank" rel="noopener noreferrer">
-                            Learn More
-                          </a>
+                <div className={`form-panel ${isFormMinimized ? 'minimized' : ''}`}>
+                  <div className="form-header d-flex justify-content-between align-items-center">
+                    <h3 className="text-center">Submit a Bird Sighting</h3>
+                    <button
+                      className="btn btn-sm btn-outline-secondary minimize-button"
+                      onClick={() => setIsFormMinimized(!isFormMinimized)}
+                    >
+                      {isFormMinimized ? '+' : '-'}
+                    </button>
+                  </div>
+                  {!isFormMinimized && (
+                    <>
+                      {formSubmitted ? (
+                        <div className="thank-you-message text-center">
+                          <h4>Thank you for your submission!</h4>
+                          <button className="btn btn-primary mt-3" onClick={resetForm}>
+                            Submit Another Sighting
+                          </button>
                         </div>
+                      ) : (
+                        <form onSubmit={handleFormSubmit}>
+                          <div className="mb-3">
+                            <label htmlFor="species" className="form-label">Select Bird Species:</label>
+                            <select
+                              id="species"
+                              name="species"
+                              className="form-select"
+                              value={formData.species}
+                              onChange={handleBirdChange}
+                              required
+                            >
+                              <option value="">-- Select a Species --</option>
+                              {birds.map((bird) => (
+                                <option key={bird.species} value={bird.species}>
+                                  {bird.species}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {selectedBird && (
+                            <div className="bird-details mb-3">
+                              <h4>{selectedBird.species}</h4>
+                              <img
+                                src={selectedBird.photo}
+                                alt={selectedBird.species}
+                                className="img-fluid bird-image mb-2"
+                              />
+                              <p>
+                                <strong>Photo Attribution:</strong>{' '}
+                                <span
+                                  dangerouslySetInnerHTML={{ __html: selectedBird.photo_attr }}
+                                ></span>
+                              </p>
+                              <p>{selectedBird.info}</p>
+                              <a href={selectedBird.info_link} target="_blank" rel="noopener noreferrer">
+                                Learn More
+                              </a>
+                            </div>
+                          )}
+
+                          <p className="text-muted mb-3">
+                            Click anywhere on the map to populate the latitude and longitude fields.
+                          </p>
+
+                          <div className="mb-3">
+                            <label htmlFor="lat" className="form-label">Latitude:</label>
+                            <input
+                              type="number"
+                              id="lat"
+                              name="lat"
+                              className="form-control"
+                              value={formData.lat}
+                              onChange={handleFormChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label htmlFor="lon" className="form-label">Longitude:</label>
+                            <input
+                              type="number"
+                              id="lon"
+                              name="lon"
+                              className="form-control"
+                              value={formData.lon}
+                              onChange={handleFormChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label htmlFor="date" className="form-label">Date:</label>
+                            <input
+                              type="date"
+                              id="date"
+                              name="date"
+                              className="form-control"
+                              value={formData.date}
+                              onChange={handleFormChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label htmlFor="time" className="form-label">Time:</label>
+                            <input
+                              type="time"
+                              id="time"
+                              name="time"
+                              className="form-control"
+                              value={formData.time}
+                              onChange={handleFormChange}
+                              required
+                            />
+                          </div>
+
+                          <button type="submit" className="btn btn-primary w-100">Submit Sighting</button>
+                        </form>
                       )}
-
-                      {/* Add the message here */}
-                      <p className="text-muted mb-3">
-                        Click anywhere on the map to populate the latitude and longitude fields.
-                      </p>
-
-                      <div className="mb-3">
-                        <label htmlFor="lat" className="form-label">Latitude:</label>
-                        <input
-                          type="number"
-                          id="lat"
-                          name="lat"
-                          className="form-control"
-                          value={formData.lat}
-                          onChange={handleFormChange}
-                          required
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label htmlFor="lon" className="form-label">Longitude:</label>
-                        <input
-                          type="number"
-                          id="lon"
-                          name="lon"
-                          className="form-control"
-                          value={formData.lon}
-                          onChange={handleFormChange}
-                          required
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label htmlFor="date" className="form-label">Date:</label>
-                        <input
-                          type="date"
-                          id="date"
-                          name="date"
-                          className="form-control"
-                          value={formData.date} // Bind to formData.date
-                          onChange={handleFormChange} // Allow user to modify
-                          required
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <label htmlFor="time" className="form-label">Time:</label>
-                        <input
-                          type="time"
-                          id="time"
-                          name="time"
-                          className="form-control"
-                          value={formData.time} // Bind to formData.time
-                          onChange={handleFormChange} // Allow user to modify
-                          required
-                        />
-                      </div>
-
-                      <button type="submit" className="btn btn-primary w-100">Submit Sighting</button>
-                    </form>
+                    </>
                   )}
                 </div>
                 {/* Points of Interest Layer */}
@@ -849,15 +873,22 @@ function App() {
                           {Object.keys(poiLayers)
                             .sort((a, b) => a.localeCompare(b)) // Sort the keys alphabetically
                             .map((poitype) => (
-                              <div key={poitype} className="form-check">
+                              <div key={poitype} className="form-check d-flex align-items-center">
                                 <input
                                   type="checkbox"
                                   id={poitype}
-                                  className="form-check-input"
+                                  className="form-check-input me-2"
                                   checked={poiLayers[poitype].visible}
                                   onChange={() => toggleLayerVisibility(poitype)}
                                 />
-                                <label htmlFor={poitype} className="form-check-label">{poitype}</label>
+                                <img
+                                  src={poitypeIcons[poitype]} // Use the icon URL for the POI type
+                                  alt={poitype}
+                                  style={{ width: '24px', height: '24px', marginRight: '8px' }}
+                                />
+                                <label htmlFor={poitype} className="form-check-label">
+                                  {poitype}
+                                </label>
                               </div>
                             ))}
                         </>
@@ -891,13 +922,18 @@ function App() {
                       </div>
                       {!isSightingsLayersMinimized && (
                         <>
-                          <div className="form-check">
+                          <div className="form-check d-flex align-items-center">
                             <input
                               type="checkbox"
                               id="sightingsLayerToggle"
-                              className="form-check-input"
+                              className="form-check-input me-2"
                               checked={isSightingsLayerVisible}
                               onChange={() => toggleLayerVisibility('sightings')}
+                            />
+                            <img
+                              src={`${process.env.PUBLIC_URL}/img/Bird.svg`} // Use the bird icon
+                              alt="Sightings"
+                              style={{ width: '24px', height: '24px', marginRight: '8px' }}
                             />
                             <label htmlFor="sightingsLayerToggle" className="form-check-label">
                               View Sightings
