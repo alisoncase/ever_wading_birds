@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[28148],{28148:(e,l,n)=>{n.r(l),n.d(l,{default:()=>p});const p={point:e=>"point"===e.type?e:"polygon"===e.type||"polyline"===e.type?e.extent?.center??null:null,polygon:e=>"polygon"===e.type?e:null,polyline:e=>"polyline"===e.type?e:null}}}]);

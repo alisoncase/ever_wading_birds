@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[45205],{45205:(e,s,d)=>{d.r(s),d.d(s,{default:()=>n});var t=d(13248),a=d(62644);class r extends a.x{}r.prototype.declaredClass="esri.identity.IdentityManager";const n=new r;(0,t.setId)(n)}}]);

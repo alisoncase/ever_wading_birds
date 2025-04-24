@@ -1,2 +1,0 @@
-/*! For license information please see 92571.96e60162.chunk.js.LICENSE.txt */
-"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[92571],{92571:(e,n,r)=>{function s(e){return"Enter"===e||" "===e}r.d(n,{i:()=>s,n:()=>i});const i=["0","1","2","3","4","5","6","7","8","9"]}}]);

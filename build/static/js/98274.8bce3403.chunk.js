@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[98274],{98274:(e,r,s)=>{s.d(r,{K:()=>t});const t={type:String,json:{read:{source:"token"},write:{target:"token"}}}}}]);
