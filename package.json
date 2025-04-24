@@ -19,9 +19,8 @@
   "build": "craco build",
   "test": "craco test",
   "eject": "react-scripts eject",
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d build --dotfiles --no-history"
-    },
+  "deploy": "npm run build && git add build && git commit -m 'Deploy build' && git push origin main"
+},
     "browserslist": {
         "production": [
             ">0.2%",
@@ -39,8 +38,5 @@
             "import": "./src/index.js",
             "require": "./src/index.js"
         }
-    },
-    "devDependencies": {
-        "gh-pages": "^6.3.0"
     }
 }
