@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkever_wading_birds=self.webpackChunkever_wading_birds||[]).push([[72636],{72636:(e,r,s)=>{s.r(r),s.d(r,{build:()=>b.b});s(37379),s(16878),s(67058),s(8118);var b=s(21628)}}]);
